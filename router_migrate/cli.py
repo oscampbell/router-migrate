@@ -12,15 +12,18 @@ Usage:
 
 import argparse
 import sys
-import re
 from router_migrate.parsers.mlx import MlxParser
 from router_migrate.parsers.arista import AristaParser
 from router_migrate.parsers.cisco import CiscoParser
 from router_migrate.parsers.juniper import JuniperParser
+from router_migrate.parsers.brocade import BrocadeParser
+from router_migrate.parsers.huawei import HuaweiParser
 from router_migrate.generators.arista import AristaGenerator
 from router_migrate.generators.mlx import MlxGenerator
 from router_migrate.generators.cisco import CiscoGenerator
 from router_migrate.generators.juniper import JuniperGenerator
+from router_migrate.generators.brocade import BrocadeGenerator
+from router_migrate.generators.huawei import HuaweiGenerator
 from router_migrate.analyzers.migrator import Migrator
 
 def main():
@@ -32,9 +35,9 @@ def main():
                         help="Target: the interface stanza(s) you want to migrate")
     parser.add_argument("-s", "--source", required=True,
                         help="Source: full running-config of the existing router")
-    parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista", "cisco", "juniper"],
+    parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista", "cisco", "juniper", "brocade", "huawei"],
                         help="Vendor of the source configuration")
-    parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx", "cisco", "juniper"],
+    parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx", "cisco", "juniper", "brocade", "huawei"],
                         help="Target vendor to migrate to")
     parser.add_argument("-o", "--output", default=None,
                         help="Output file (default: stdout)")
@@ -69,6 +72,10 @@ def main():
         parser_obj = CiscoParser()
     elif args.source_vendor == "juniper":
         parser_obj = JuniperParser()
+    elif args.source_vendor == "brocade":
+        parser_obj = BrocadeParser()
+    elif args.source_vendor == "huawei":
+        parser_obj = HuaweiParser()
     else:
         sys.exit(f"[error] unknown source vendor: {args.source_vendor}")
 
@@ -88,6 +95,10 @@ def main():
         generator = CiscoGenerator()
     elif args.target_vendor == "juniper":
         generator = JuniperGenerator()
+    elif args.target_vendor == "brocade":
+        generator = BrocadeGenerator()
+    elif args.target_vendor == "huawei":
+        generator = HuaweiGenerator()
     else:
         sys.exit(f"[error] unknown target vendor: {args.target_vendor}")
 
