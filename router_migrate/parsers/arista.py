@@ -19,6 +19,8 @@ class AristaParser(BaseParser):
                 current_block = [stripped]
         if current_block:
             blocks.append(current_block)
+        return blocks
+
     def _parse_acl_rule(self, raw_line: str) -> AclRuleIR:
         rule = AclRuleIR(action="permit", protocol="ip", source="any", destination="any", raw_line=raw_line)
         parts = raw_line.split()
