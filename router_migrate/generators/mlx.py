@@ -1,8 +1,26 @@
 from typing import List
 from router_migrate.generators.base import BaseGenerator
-from router_migrate.models import MigrationIR
+from router_migrate.models import MigrationIR, AclRuleIR
 
 class MlxGenerator(BaseGenerator):
+    def _generate_acl_rule(self, rule: AclRuleIR) -> str:
+        if not rule.action or not rule.protocol:
+            translated = rule.raw_line
+            return translated
+        
+        parts = [rule.action, rule.protocol, rule.source]
+        if rule.source_port:
+            parts.append(rule.source_port)
+            
+        parts.append(rule.destination)
+        if rule.destination_port:
+            parts.append(rule.destination_port)
+            
+        if rule.log:
+            parts.append("log")
+            
+        return " ".join(parts)
+
     def generate(self, migration_ir: MigrationIR) -> str:
         out: List[str] = []
         
@@ -69,9 +87,7 @@ class MlxGenerator(BaseGenerator):
                 # Basic translation
                 out.append(f"ip access-list extended {acl.name}")
                 for rule in acl.rules:
-                    translated = rule.raw_line
-                    # Remove "ip access-list" from raw Arista line if any
-                    out.append(f" {translated}")
+                    out.append(f" {self._generate_acl_rule(rule)}")
                 out.append("!")
             out.append("")
 

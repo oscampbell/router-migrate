@@ -40,10 +40,13 @@ class VlanIR:
 @dataclass
 class AclRuleIR:
     action: str # 'permit' or 'deny'
-    protocol: str # 'ip', 'tcp', 'udp', etc.
-    source: str
-    destination: str
-    raw_line: str
+    protocol: str # 'ip', 'tcp', 'udp', 'icmp', etc.
+    source: str # IP/mask or 'any' or 'host IP'
+    destination: str # IP/mask or 'any' or 'host IP'
+    source_port: Optional[str] = None # e.g. 'eq 80', 'range 1000 2000'
+    destination_port: Optional[str] = None
+    log: bool = False
+    raw_line: str = ""
 
 @dataclass
 class AclIR:

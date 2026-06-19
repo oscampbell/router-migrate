@@ -15,8 +15,12 @@ import sys
 import re
 from router_migrate.parsers.mlx import MlxParser
 from router_migrate.parsers.arista import AristaParser
+from router_migrate.parsers.cisco import CiscoParser
+from router_migrate.parsers.juniper import JuniperParser
 from router_migrate.generators.arista import AristaGenerator
 from router_migrate.generators.mlx import MlxGenerator
+from router_migrate.generators.cisco import CiscoGenerator
+from router_migrate.generators.juniper import JuniperGenerator
 from router_migrate.analyzers.migrator import Migrator
 
 def main():
@@ -28,9 +32,9 @@ def main():
                         help="Target: the interface stanza(s) you want to migrate")
     parser.add_argument("-s", "--source", required=True,
                         help="Source: full running-config of the existing router")
-    parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista"],
+    parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista", "cisco", "juniper"],
                         help="Vendor of the source configuration")
-    parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx"],
+    parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx", "cisco", "juniper"],
                         help="Target vendor to migrate to")
     parser.add_argument("-o", "--output", default=None,
                         help="Output file (default: stdout)")
@@ -59,8 +63,14 @@ def main():
     # 1. Parse
     if args.source_vendor == "mlx":
         parser_obj = MlxParser()
-    else:
+    elif args.source_vendor == "arista":
         parser_obj = AristaParser()
+    elif args.source_vendor == "cisco":
+        parser_obj = CiscoParser()
+    elif args.source_vendor == "juniper":
+        parser_obj = JuniperParser()
+    else:
+        sys.exit(f"[error] unknown source vendor: {args.source_vendor}")
 
     source_device = parser_obj.parse(fullconfig_text)
     target_snippet = parser_obj.parse_snippet(target_text)
@@ -72,8 +82,14 @@ def main():
     # 3. Generate
     if args.target_vendor == "arista":
         generator = AristaGenerator()
-    else:
+    elif args.target_vendor == "mlx":
         generator = MlxGenerator()
+    elif args.target_vendor == "cisco":
+        generator = CiscoGenerator()
+    elif args.target_vendor == "juniper":
+        generator = JuniperGenerator()
+    else:
+        sys.exit(f"[error] unknown target vendor: {args.target_vendor}")
 
     output_text = generator.generate(migration_ir)
 

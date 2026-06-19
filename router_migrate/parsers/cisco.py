@@ -1,9 +1,9 @@
 import re
-from typing import List, Dict
+from typing import List
 from router_migrate.parsers.base import BaseParser
 from router_migrate.models import DeviceIR, InterfaceIR, VrfIR, VlanIR, AclIR, AclRuleIR, BgpVrfIR, BgpNeighborIR, StaticRouteIR, RouteMapIR, RouteMapRuleIR, IPAddress
 
-class AristaParser(BaseParser):
+class CiscoParser(BaseParser):
     def _split_blocks(self, text: str) -> List[List[str]]:
         blocks = []
         current_block = []
@@ -19,20 +19,28 @@ class AristaParser(BaseParser):
                 current_block = [stripped]
         if current_block:
             blocks.append(current_block)
+        return blocks
+
     def _parse_acl_rule(self, raw_line: str) -> AclRuleIR:
+        # Very basic regex for deep parsing: permit tcp any host 1.1.1.1 eq 80
+        # This can be made more robust, but serves as the deeper translation foundation
         rule = AclRuleIR(action="permit", protocol="ip", source="any", destination="any", raw_line=raw_line)
         parts = raw_line.split()
-        if not parts: return rule
+        if not parts:
+            return rule
         
+        # Strip sequence numbers if present
         if parts[0].isdigit():
             parts.pop(0)
             
         if not parts: return rule
-        rule.action = parts.pop(0)
         
+        rule.action = parts.pop(0)
         if not parts: return rule
+        
         rule.protocol = parts.pop(0)
         
+        # parse source
         if not parts: return rule
         if parts[0] == "any":
             rule.source = "any"
@@ -45,6 +53,7 @@ class AristaParser(BaseParser):
             mask = parts.pop(0) if parts else "0.0.0.0"
             rule.source = f"{ip} {mask}"
             
+        # parse source port
         if parts and parts[0] in ["eq", "gt", "lt", "neq", "range"]:
             op = parts.pop(0)
             port = parts.pop(0)
@@ -54,6 +63,7 @@ class AristaParser(BaseParser):
             else:
                 rule.source_port = f"{op} {port}"
 
+        # parse destination
         if not parts: return rule
         if parts[0] == "any":
             rule.destination = "any"
@@ -66,6 +76,7 @@ class AristaParser(BaseParser):
             mask = parts.pop(0) if parts else "0.0.0.0"
             rule.destination = f"{ip} {mask}"
             
+        # parse dest port
         if parts and parts[0] in ["eq", "gt", "lt", "neq", "range"]:
             op = parts.pop(0)
             port = parts.pop(0)
@@ -94,15 +105,12 @@ class AristaParser(BaseParser):
                 for line in block[1:]:
                     if line.startswith("description"):
                         iface.description = line.replace("description", "").strip()
-                    elif line.startswith("vrf"):
-                        iface.vrf = line.replace("vrf", "").strip()
+                    elif line.startswith("vrf forwarding") or line.startswith("ip vrf forwarding"):
+                        iface.vrf = line.replace("vrf forwarding", "").replace("ip vrf forwarding", "").strip()
                     elif line.startswith("ip address"):
                         parts = line.split()
                         if len(parts) >= 3:
-                            if "/" in parts[2]:
-                                addr, mask = parts[2].split("/")
-                                iface.ip_addresses.append(IPAddress(address=addr, mask=mask))
-                            elif len(parts) >= 4:
+                            if len(parts) >= 4:
                                 iface.ip_addresses.append(IPAddress(address=parts[2], mask=parts[3]))
                     elif line.startswith("ip access-group"):
                         parts = line.split()
@@ -120,8 +128,8 @@ class AristaParser(BaseParser):
                 ir.interfaces[iface_name] = iface
 
             # VRF
-            elif header.startswith("vrf instance "):
-                vrf_name = header.split("vrf instance ")[1].strip()
+            elif header.startswith("vrf definition ") or header.startswith("ip vrf "):
+                vrf_name = header.replace("vrf definition ", "").replace("ip vrf ", "").strip()
                 vrf = VrfIR(name=vrf_name, raw_lines=block)
                 for line in block[1:]:
                     if line.startswith("rd "):
@@ -161,8 +169,8 @@ class AristaParser(BaseParser):
             elif header.startswith("router bgp"):
                 current_vrf = None
                 for line in block[1:]:
-                    if line.startswith("vrf "):
-                        current_vrf = line.split("vrf ")[-1].strip()
+                    if line.startswith("address-family ipv4 vrf "):
+                        current_vrf = line.replace("address-family ipv4 vrf ", "").strip()
                         if current_vrf not in ir.bgp_vrfs:
                             ir.bgp_vrfs[current_vrf] = BgpVrfIR(vrf=current_vrf, raw_lines=[])
                     elif current_vrf:
@@ -173,15 +181,6 @@ class AristaParser(BaseParser):
                                 ip = parts[1]
                                 if ip not in ir.bgp_vrfs[current_vrf].neighbors:
                                     ir.bgp_vrfs[current_vrf].neighbors[ip] = BgpNeighborIR(ip=ip, raw_lines=[])
-                                if "route-map" in line:
-                                    rm_index = parts.index("route-map")
-                                    if len(parts) > rm_index + 2:
-                                        direction = parts[rm_index + 1]
-                                        rm_name = parts[rm_index + 2]
-                                        if direction == "in":
-                                            ir.bgp_vrfs[current_vrf].neighbors[ip].route_map_in = rm_name
-                                        elif direction == "out":
-                                            ir.bgp_vrfs[current_vrf].neighbors[ip].route_map_out = rm_name
 
             # Route Map
             elif header.startswith("route-map"):
