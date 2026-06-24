@@ -79,11 +79,19 @@ router-migrate -t target_snippet.txt -s full_running_config.txt \
    git clone https://github.com/oscampbell/router-migrate.git
    cd router-migrate
    ```
-2. Install the tool and its dependencies:
+2. Set up a Virtual Environment (Recommended, especially for macOS users):
+   Modern macOS systems require you to use a virtual environment to install packages. Run this to create and activate one:
    ```bash
-   pip install .
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
-   *(Note: This will automatically install requirements like `FastAPI` for the Web UI and `Questionary` for the interactive wizard).*
+   *(Note: You'll need to run `source .venv/bin/activate` anytime you open a new terminal to use the tool).*
+
+3. Install the tool and its dependencies:
+   ```bash
+   pip install -e .
+   ```
+   *(This will automatically install requirements like `FastAPI` for the Web UI and `Questionary` for the interactive wizard).*
 
 ---
 
