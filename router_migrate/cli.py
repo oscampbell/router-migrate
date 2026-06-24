@@ -32,9 +32,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("-t", "--target", required=True,
-                        help="Target: the interface stanza(s) you want to migrate")
+                        help="Target: the interface stanza(s) you want to migrate (use '-' for stdin)")
     parser.add_argument("-s", "--source", required=True,
-                        help="Source: full running-config of the existing router")
+                        help="Source: full running-config of the existing router (use '-' for stdin)")
     parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista", "cisco", "juniper", "brocade", "huawei"],
                         help="Vendor of the source configuration")
     parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx", "cisco", "juniper", "brocade", "huawei"],
@@ -48,10 +48,19 @@ def main():
     args = parser.parse_args()
 
     try:
-        with open(args.target) as f:
-            target_text = f.read()
-        with open(args.source) as f:
-            fullconfig_text = f.read()
+        if args.target == "-":
+            target_text = sys.stdin.read()
+        else:
+            with open(args.target) as f:
+                target_text = f.read()
+
+        if args.source == "-":
+            if args.target == "-":
+                sys.exit("[error] cannot read both target and source from stdin")
+            fullconfig_text = sys.stdin.read()
+        else:
+            with open(args.source) as f:
+                fullconfig_text = f.read()
     except FileNotFoundError as e:
         sys.exit(f"[error] {e}")
 
