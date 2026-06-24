@@ -14,7 +14,9 @@ import argparse
 import sys
 import os
 import logging
+import questionary
 from router_migrate import __version__
+from router_migrate.analyzers.fidelity import check_fidelity
 from router_migrate.parsers.mlx import MlxParser
 from router_migrate.parsers.arista import AristaParser
 from router_migrate.parsers.cisco import CiscoParser
@@ -27,6 +29,8 @@ from router_migrate.generators.cisco import CiscoGenerator
 from router_migrate.generators.juniper import JuniperGenerator
 from router_migrate.generators.brocade import BrocadeGenerator
 from router_migrate.generators.huawei import HuaweiGenerator
+from router_migrate.parsers.panos import PanosParser
+from router_migrate.generators.panos import PanosGenerator
 from router_migrate.analyzers.migrator import Migrator
 
 def main():
@@ -34,16 +38,20 @@ def main():
         description="Universal Router Migration Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("-t", "--target", required=True,
+    parser.add_argument("-t", "--target",
                         help="Target: the interface stanza(s) you want to migrate (use '-' for stdin)")
-    parser.add_argument("-s", "--source", required=True,
+    parser.add_argument("-s", "--source",
                         help="Source: full running-config of the existing router (use '-' for stdin)")
-    parser.add_argument("--source-vendor", required=True, choices=["mlx", "arista", "cisco", "juniper", "brocade", "huawei"],
+    parser.add_argument("--source-vendor", choices=["mlx", "arista", "cisco", "juniper", "brocade", "huawei", "panos"],
                         help="Vendor of the source configuration")
-    parser.add_argument("--target-vendor", required=True, choices=["arista", "mlx", "cisco", "juniper", "brocade", "huawei"],
+    parser.add_argument("--target-vendor", choices=["arista", "mlx", "cisco", "juniper", "brocade", "huawei", "panos"],
                         help="Target vendor to migrate to")
     parser.add_argument("-o", "--output", default=None,
                         help="Output file (default: stdout)")
+    parser.add_argument("--validate", action="store_true",
+                        help="Run validation and generate a fidelity report")
+    parser.add_argument("--serve", action="store_true",
+                        help="Start the FastAPI web-based GUI")
     parser.add_argument("-f", "--force", action="store_true",
                         help="Force overwrite if output file already exists")
     parser.add_argument("--new-interface", action="append", default=[],
@@ -55,6 +63,27 @@ def main():
                         help="Show the version of the tool")
 
     args = parser.parse_args()
+
+    if args.serve:
+        print("Starting FastAPI Web Server on http://localhost:8000...")
+        import uvicorn
+        uvicorn.run("router_migrate.web.app:app", host="127.0.0.1", port=8000, reload=True)
+        sys.exit(0)
+
+    if len(sys.argv) == 1:
+        print("Welcome to router-migrate TUI Wizard!")
+        args.source = questionary.path("Path to source configuration file:").ask()
+        args.target = questionary.path("Path to target interface snippet file:").ask()
+        vendors = ["mlx", "arista", "cisco", "juniper", "brocade", "huawei", "panos"]
+        args.source_vendor = questionary.select("Select Source Vendor:", choices=vendors).ask()
+        args.target_vendor = questionary.select("Select Target Vendor:", choices=vendors).ask()
+        args.output = questionary.text("Output file (leave blank for stdout):").ask()
+        if not args.output:
+            args.output = None
+        args.validate = questionary.confirm("Run fidelity validation?").ask()
+        
+    if not all([args.source, args.target, args.source_vendor, args.target_vendor]):
+        sys.exit("[error] Missing required arguments.")
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
@@ -99,6 +128,8 @@ def main():
         parser_obj = BrocadeParser()
     elif args.source_vendor == "huawei":
         parser_obj = HuaweiParser()
+    elif args.source_vendor == "panos":
+        parser_obj = PanosParser()
     else:
         sys.exit(f"[error] unknown source vendor: {args.source_vendor}")
 
@@ -122,6 +153,8 @@ def main():
         generator = BrocadeGenerator()
     elif args.target_vendor == "huawei":
         generator = HuaweiGenerator()
+    elif args.target_vendor == "panos":
+        generator = PanosGenerator()
     else:
         sys.exit(f"[error] unknown target vendor: {args.target_vendor}")
 
@@ -136,6 +169,29 @@ def main():
         print(f"Output written to: {args.output}")
     else:
         print(output_text)
+
+    # Validation
+    if args.validate:
+        logging.info("Running fidelity validation...")
+        target_parser_class = {
+            "mlx": MlxParser,
+            "arista": AristaParser,
+            "cisco": CiscoParser,
+            "juniper": JuniperParser,
+            "brocade": BrocadeParser,
+            "huawei": HuaweiParser,
+            "panos": PanosParser
+        }[args.target_vendor]
+        target_parser = target_parser_class()
+        target_ir = target_parser.parse(output_text)
+        warnings = check_fidelity(source_device, target_ir)
+        if warnings:
+            print("\n--- Fidelity Warnings ---")
+            for w in warnings:
+                print(w)
+            print("-------------------------\n")
+        else:
+            print("\n--- Validation Successful: No feature drops detected ---\n")
 
 if __name__ == "__main__":
     main()

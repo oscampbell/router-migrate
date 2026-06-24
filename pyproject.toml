@@ -11,7 +11,16 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "questionary",
+    "rich",
+    "pytest"
+]
+
+[tool.setuptools.packages.find]
+include = ["router_migrate*"]
 
 [project.scripts]
 router-migrate = "router_migrate.cli:main"

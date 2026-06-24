@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Router Migrate AI</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>Router Migrate</h1>
+            </div>
+            <p class="subtitle">Universal Interface Migration Engine</p>
+        </header>
+
+        <main>
+            <div class="panel source-panel glass">
+                <div class="panel-header">
+                    <h2>Source</h2>
+                    <div class="select-wrapper">
+                        <select id="source-vendor" class="styled-select">
+                            <option value="mlx">MLX</option>
+                            <option value="arista">Arista</option>
+                            <option value="cisco" selected>Cisco</option>
+                            <option value="juniper">Juniper</option>
+                            <option value="brocade">Brocade</option>
+                            <option value="huawei">Huawei</option>
+                            <option value="panos">PAN-OS</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <label for="source-config">Full Running Config</label>
+                    <textarea id="source-config" placeholder="Paste full source running-config here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="center-controls">
+                <button id="migrate-btn" class="glow-button">
+                    <span class="btn-text">Migrate</span>
+                    <span class="btn-icon">➔</span>
+                </button>
+            </div>
+
+            <div class="panel target-panel glass">
+                <div class="panel-header">
+                    <h2>Target</h2>
+                    <div class="select-wrapper">
+                        <select id="target-vendor" class="styled-select">
+                            <option value="arista" selected>Arista</option>
+                            <option value="mlx">MLX</option>
+                            <option value="cisco">Cisco</option>
+                            <option value="juniper">Juniper</option>
+                            <option value="brocade">Brocade</option>
+                            <option value="huawei">Huawei</option>
+                            <option value="panos">PAN-OS</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <label for="target-config">Target Interface Stanza</label>
+                    <textarea id="target-config" placeholder="Paste target interface snippet here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+        </main>
+
+        <section class="results-section glass hidden" id="results-section">
+            <div class="panel-header">
+                <h2>Generated Migration Config</h2>
+                <button id="copy-btn" class="icon-button" title="Copy to clipboard">📋 Copy</button>
+            </div>
+            <div class="editor-container">
+                <pre><code id="output-config" class="language-config"></code></pre>
+            </div>
+        </section>
+        
+        <div id="loading-overlay" class="overlay hidden">
+            <div class="spinner"></div>
+            <p>Analyzing and Migrating...</p>
+        </div>
+        
+        <div id="toast" class="toast hidden"></div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
