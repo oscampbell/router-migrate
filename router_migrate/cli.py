@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import sys
+from router_migrate import __version__
 from router_migrate.parsers.mlx import MlxParser
 from router_migrate.parsers.arista import AristaParser
 from router_migrate.parsers.cisco import CiscoParser
@@ -44,6 +45,8 @@ def main():
     parser.add_argument("--new-interface", action="append", default=[],
                         metavar="OLD=NEW",
                         help="Interface rename on new device, e.g. --new-interface ethernet 1/1=Ethernet5")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}",
+                        help="Show the version of the tool")
 
     args = parser.parse_args()
 
