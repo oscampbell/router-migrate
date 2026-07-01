@@ -16,11 +16,16 @@
                     <div class="logo-icon"></div>
                     <h1>Router Migrate</h1>
                 </div>
-                <button id="theme-btn" class="theme-toggle-btn" title="Change Theme">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10"/><path d="M12 8v8M8 12h8"/></svg>
-                    <span id="theme-label">Theme</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
+                <div class="header-actions">
+                    <button id="history-btn" class="header-action-btn" title="Migration History">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>History</span>
+                    </button>
+                    <button id="theme-btn" class="header-action-btn" title="Change Theme">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10"/><path d="M12 8v8M8 12h8"/></svg>
+                        <span id="theme-label">Theme</span>
+                    </button>
+                </div>
             </div>
             <p class="subtitle">Universal Interface Migration Engine</p>
         </header>
@@ -29,16 +34,22 @@
             <div class="panel source-panel glass">
                 <div class="panel-header">
                     <h2>Source</h2>
-                    <div class="select-wrapper">
-                        <select id="source-vendor" class="styled-select">
-                            <option value="mlx">MLX</option>
-                            <option value="arista">Arista</option>
-                            <option value="cisco" selected>Cisco</option>
-                            <option value="juniper">Juniper</option>
-                            <option value="brocade">Brocade</option>
-                            <option value="huawei">Huawei</option>
-                            <option value="panos">PAN-OS</option>
-                        </select>
+                    <div class="panel-header-right">
+                        <button id="save-source-btn" class="icon-button save-source-btn" title="Save this source config">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save Source
+                        </button>
+                        <div class="select-wrapper">
+                            <select id="source-vendor" class="styled-select">
+                                <option value="mlx">MLX</option>
+                                <option value="arista">Arista</option>
+                                <option value="cisco" selected>Cisco</option>
+                                <option value="juniper">Juniper</option>
+                                <option value="brocade">Brocade</option>
+                                <option value="huawei">Huawei</option>
+                                <option value="panos">PAN-OS</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="editor-container">
@@ -104,6 +115,45 @@
                 <button id="theme-close" class="theme-close-btn">&#x2715;</button>
             </div>
             <div class="theme-grid" id="theme-grid"></div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="history-modal hidden">
+        <div class="history-modal-backdrop" id="history-backdrop"></div>
+        <div class="history-modal-panel glass">
+            <div class="history-modal-header">
+                <h3>History</h3>
+                <button id="history-close" class="theme-close-btn">&#x2715;</button>
+            </div>
+            <div class="history-tabs">
+                <button class="history-tab active" data-tab="migrations" id="tab-migrations">Recent Migrations</button>
+                <button class="history-tab" data-tab="sources" id="tab-sources">Saved Sources</button>
+            </div>
+            <div class="history-content" id="history-content"></div>
+        </div>
+    </div>
+
+    <!-- Save Source Dialog -->
+    <div id="save-source-modal" class="save-source-modal hidden">
+        <div class="save-source-backdrop" id="save-source-backdrop"></div>
+        <div class="save-source-panel glass">
+            <div class="save-source-header">
+                <h3>Save Source Config</h3>
+                <button id="save-source-close" class="theme-close-btn">&#x2715;</button>
+            </div>
+            <div class="save-source-body">
+                <label class="save-source-label" for="save-source-hostname">Hostname</label>
+                <input type="text" id="save-source-hostname" class="save-source-input" placeholder="e.g. core-sw-01" autocomplete="off" spellcheck="false">
+                <p class="save-source-hint">Auto-extracted from config — edit if needed.</p>
+            </div>
+            <div class="save-source-footer">
+                <button id="save-source-cancel" class="icon-button">Cancel</button>
+                <button id="save-source-confirm" class="glow-button save-source-confirm-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save
+                </button>
+            </div>
         </div>
     </div>
 </body>
