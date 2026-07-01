@@ -130,12 +130,20 @@ function extractInterfaces(config, vendor) {
 function ifaceChipsHTML(ifaces) {
     if (!ifaces || ifaces.length === 0) return '';
     const MAX = 6;
-    const shown = ifaces.slice(0, MAX);
-    const extra = ifaces.length - MAX;
-    return '<div class="history-ifaces">' +
-        shown.map(i => '<span class="history-iface-chip">' + escapeHtml(i) + '</span>').join('') +
-        (extra > 0 ? '<span class="history-iface-chip history-iface-more">+' + extra + ' more</span>' : '') +
-    '</div>';
+    const extraCount = ifaces.length - MAX;
+    
+    let html = '<div class="history-ifaces">';
+    ifaces.forEach((iface, idx) => {
+        const isExtra = idx >= MAX;
+        const extraClass = isExtra ? ' history-iface-extra' : '';
+        html += '<span class="history-iface-chip' + extraClass + '">' + escapeHtml(iface) + '</span>';
+    });
+    
+    if (extraCount > 0) {
+        html += '<span class="history-iface-chip history-iface-more" style="cursor: pointer;">+' + extraCount + ' more</span>';
+    }
+    html += '</div>';
+    return html;
 }
 
 function escapeHtml(str) {
@@ -351,6 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteMigration(id);
                 }
                 buildHistoryContent();
+            }
+
+            const moreBtn = e.target.closest('.history-iface-more');
+            if (moreBtn) {
+                const parent = moreBtn.closest('.history-ifaces');
+                if (parent) {
+                    parent.classList.add('expanded');
+                }
             }
         });
     }

@@ -1335,6 +1335,18 @@ pre {
     border-style: dashed;
 }
 
+.history-iface-extra {
+    display: none;
+}
+
+.history-ifaces.expanded .history-iface-extra {
+    display: inline-block;
+}
+
+.history-ifaces.expanded .history-iface-more {
+    display: none;
+}
+
 
 /* ============================================================
    SAVE SOURCE DIALOG
